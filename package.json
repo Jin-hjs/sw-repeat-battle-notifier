@@ -1,0 +1,25 @@
+{
+  "name": "sw-repeat-battle-notifier",
+  "version": "1.0.0",
+  "description": "Plugin for SWEX to help reduce downtime between runs.",
+  "main": "index.js",
+  "scripts": {
+    "asar": "asar pack . repeat-battle-notifier.asar",
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Jin-hjs/sw-repeat-battle-notifier.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Jin-hjs/sw-repeat-battle-notifier/issues"
+  },
+  "homepage": "https://github.com/Jin-hjs/sw-repeat-battle-notifier#readme",
+  "dependencies": {
+    "node-fetch": "^2.6.7",
+    "os-locale": "^5.0.0"
+  }
+}

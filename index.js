@@ -9,7 +9,7 @@ const CONFIG_PATH = path.join(process.env.APPDATA, 'Summoners War Exporter', 'st
     DUNGEON_IDS = [8001, 9001, 6001, 9501, 9502, 9999],
     ENDPOINT = 'https://devilmon.me',
     ICON_PATH = path.join(__dirname, '/assets/images/icon.png'),
-    PLUGIN_VERSION = '1.0.1',
+    PLUGIN_VERSION = '1.0.2',
     START_COMMANDS = [
         'BattleDimensionHoleDungeonStart',
         'BattleDungeonStart',
@@ -351,8 +351,12 @@ module.exports = {
             todayStatReference.runCount += clearCount;
             totalStatReference.clearTime += totalClearTime;
             totalStatReference.runCount += clearCount;
-            this.saveConfig(customConfig);
+        } else {
+            todayStatReference.runCount_unlisted += clearCount;
+            totalStatReference.runCount_unlisted += clearCount;
         }
+
+        this.saveConfig(customConfig);
     },
 
     failRun(proxy, config, dungeonId, stageId, additionalSoundDelay = 0) {
@@ -396,13 +400,17 @@ module.exports = {
 
         if (todayStatReference && this.isHighestStage(dungeonId, stageId)) {
             todayStatReference.clearTime += totalClearTime;
-            todayStatReference.runCount += clearCount;
+            todayStatReference.runCount += clearCount + 1;
             todayStatReference.failCount++;
             totalStatReference.clearTime += totalClearTime;
-            totalStatReference.runCount += clearCount;
+            totalStatReference.runCount += clearCount + 1;
             totalStatReference.failCount++;
-            this.saveConfig(customConfig);
+        } else {
+            todayStatReference.runCount_unlisted += clearCount + 1;
+            totalStatReference.runCount_unlisted += clearCount + 1;
         }
+
+        this.saveConfig(customConfig);
     },
 
     formatTime(timeInMS, useHTML = true) {
@@ -558,7 +566,7 @@ module.exports = {
                 res.text().then(version => {
                     const isLatest = version == 'latest';
                     customConfig.checkedVersion = version;
-                    
+
                     if (!isLatest)
                         shell.openExternal('https://github.com/Jin-hjs/sw-repeat-battle-notifier/releases/latest');
 

@@ -9,7 +9,7 @@ const CONFIG_PATH = path.join(process.env.APPDATA, 'Summoners War Exporter', 'st
     DUNGEON_IDS = [8001, 9001, 6001, 9501, 9502, 9999],
     ENDPOINT = 'https://devilmon.me',
     ICON_PATH = path.join(__dirname, '/assets/images/icon.png'),
-    PLUGIN_VERSION = '1.0.0',
+    PLUGIN_VERSION = '1.0.1',
     START_COMMANDS = [
         'BattleDimensionHoleDungeonStart',
         'BattleDungeonStart',
@@ -59,8 +59,22 @@ module.exports = {
     pluginDescription: useKorean ? '연속전투가 종료될때 알려줍니다.' : 'Notifies you when dungeon runs are complete.',
 
     init(proxy, config) {
-        if (fs.existsSync(CONFIG_PATH))
+        if (fs.existsSync(CONFIG_PATH)) {
             customConfig = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
+
+            if (customConfig.totalStats[9999].failCount == undefined) {
+                DUNGEON_IDS.forEach(dungeonId => {
+                    customConfig.totalStats[dungeonId].failCount = 0;
+                });
+
+                for (let i = 0; i < 7; i++)
+                    DUNGEON_IDS.forEach(dungeonId => {
+                        customConfig.weeklyStats[i][dungeonId].failCount = 0;
+                    });
+            }
+
+            this.saveConfig(customConfig);
+        }
         else {
             const weeklyStats = {};
 
@@ -77,6 +91,7 @@ module.exports = {
                 userId: null,
                 weeklyStats: weeklyStats
             }
+
             this.saveConfig(customConfig);
         }
 
@@ -379,8 +394,10 @@ module.exports = {
         if (todayStatReference && this.isHighestStage(dungeonId, stageId)) {
             todayStatReference.clearTime += totalClearTime;
             todayStatReference.runCount += clearCount;
+            todayStatReference.failCount++;
             totalStatReference.clearTime += totalClearTime;
             totalStatReference.runCount += clearCount;
+            totalStatReference.failCount++;
             this.saveConfig(customConfig);
         }
     },
@@ -459,7 +476,7 @@ module.exports = {
         }
 
         this.getStats(useKorean ? '연속전투 통계 (오늘)' : 'Today\'s Stats', report, 0, 0);
-        this.getStats(useKorean ? '연속전투 통계 (어제)' : 'Yesterday\'s Stats', report, 1, 1);
+        this.getStats(useKorean ? '연속전투 통계 (어제)' : 'Yesterday\'s Stats', report, 6, 6);
         this.getStats(useKorean ? '연속전투 통계 (최근 1주)' : 'This Week\'s Stats', report, 0, 7);
         this.getStats(useKorean ? '연속전투 통계 (전체)' : 'All Time Stats', report, -1, -1);
 
@@ -518,6 +535,12 @@ module.exports = {
 
         DUNGEON_IDS.forEach(dungeonId => {
             table += `<td style="text-align:center">${this.formatTime(stats[dungeonId].clearTime)}</td>`;
+        });
+
+        table += `</tr><tr><td><b>${useKorean ? '전복률' : 'Fail Rate'}</b></td>`;
+
+        DUNGEON_IDS.forEach(dungeonId => {
+            table += `<td style="text-align:center">${~~(stats[dungeonId].failCount / stats[dungeonId].runCount * 10000) / 100}%</td>`;
         });
 
         table += `</tr><tr><td><b>${useKorean ? '평균 자사간 간격' : 'Avg. Downtime'}</b></td>

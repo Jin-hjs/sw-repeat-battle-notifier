@@ -1,4 +1,4 @@
-const { app, Notification } = require('electron'),
+const { app, Notification, shell } = require('electron'),
     osLocale = require('os-locale'),
     fetch = require('node-fetch'),
     fs = require('fs'),
@@ -61,6 +61,9 @@ module.exports = {
     init(proxy, config) {
         if (fs.existsSync(CONFIG_PATH)) {
             customConfig = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
+
+            if (customConfig.checkedVersion == undefined)
+                customConfig.checkedVersion = PLUGIN_VERSION;
 
             if (customConfig.totalStats[9999].failCount == undefined) {
                 DUNGEON_IDS.forEach(dungeonId => {
@@ -296,7 +299,7 @@ module.exports = {
                     status: 200,
                     text: () => {
                         return new Promise((textRes, textRej) => {
-                            textRes('latest');
+                            textRes(customConfig.checkedVersion == PLUGIN_VERSION ? 'latest' : 'outdated');
                         });
                     }
                 });
@@ -554,7 +557,8 @@ module.exports = {
             if (res.status === 200)
                 res.text().then(version => {
                     const isLatest = version == 'latest';
-
+                    customConfig.checkedVersion = version;
+                    
                     if (!isLatest)
                         shell.openExternal('https://github.com/Jin-hjs/sw-repeat-battle-notifier/releases/latest');
 

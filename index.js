@@ -9,7 +9,7 @@ const CONFIG_PATH = path.join(process.env.APPDATA, 'Summoners War Exporter', 'st
     DUNGEON_IDS = [8001, 9001, 6001, 9501, 9502, 9999],
     ENDPOINT = 'https://devilmon.me',
     ICON_PATH = path.join(__dirname, '/assets/images/icon.png'),
-    PLUGIN_VERSION = '1.0.2',
+    PLUGIN_VERSION = '1.0.1',
     START_COMMANDS = [
         'BattleDimensionHoleDungeonStart',
         'BattleDungeonStart',
@@ -313,7 +313,8 @@ module.exports = {
             totalClearTime = 0,
             soundDelay = parseInt(config.Config.Plugins[this.pluginName].soundDelay) ?? DEFAULT_DELAY,
             soundVolume = parseInt(config.Config.Plugins[this.pluginName].soundVolume) ?? 5,
-            todayStatReference = customConfig.weeklyStats[new Date().getDay()][dungeonId],
+            todayStat = customConfig.weeklyStats[new Date().getDay()],
+            todayStatReference = todayStat[dungeonId],
             totalStatReference = customConfig.totalStats[dungeonId];
 
         soundDelay = Math.max(0, Math.min(soundDelay, 60000));
@@ -336,9 +337,9 @@ module.exports = {
         setTimeout(() => {
             this.log(proxy, 'success',
                 `${soundVolume ? `<audio class="asd" src="${path.join(__dirname, `/assets/sounds/c${soundVolume}.mp3`)}" autoplay></audio>` : ''}
-                Repeat Battle has ${maxLevelReached ? 'ended for reaching MAX level' : notEnoughEnergy ? 'ended due to insufficient energy' : 'been completed'}.<br><b>Avg. Clear Time:</b> ${this.formatTime(averageClearTime)} &nbsp; <b>Total time expended:</b> ${this.formatTime(totalClearTime)}`,
+                Repeat Battle has ${maxLevelReached ? 'ended for reaching MAX level' : notEnoughEnergy ? 'ended due to insufficient energy' : 'been completed'}.<br><b>Avg. Clear Time:</b> ${this.formatTime(averageClearTime * 1000)} &nbsp; <b>Total time expended:</b> ${this.formatTime(totalClearTime * 1000)}`,
                 `${soundVolume ? `<audio class="asd" src="${path.join(__dirname, `/assets/sounds/c${soundVolume}.mp3`)}" autoplay></audio>` : ''}
-                ${maxLevelReached ? '<b>몬스터 최대레벨 달성</b>으로 ' : notEnoughEnergy ? '/b>에너지 부족</b>으로 ' : ''}<b>연속전투가 종료</b>되었습니다.<br><b>평균 클리어 타임:</b> ${this.formatTime(averageClearTime)} &nbsp; <b>총 소요시간:</b> ${this.formatTime(totalClearTime)}`);
+                ${maxLevelReached ? '<b>몬스터 최대레벨 달성</b>으로 ' : notEnoughEnergy ? '/b>에너지 부족</b>으로 ' : ''}<b>연속전투가 종료</b>되었습니다.<br><b>평균 클리어 타임:</b> ${this.formatTime(averageClearTime * 1000)} &nbsp; <b>총 소요시간:</b> ${this.formatTime(totalClearTime * 1000)}`);
 
             notification.show();
             notification.on('click', () => {
@@ -352,8 +353,8 @@ module.exports = {
             totalStatReference.clearTime += totalClearTime;
             totalStatReference.runCount += clearCount;
         } else {
-            todayStatReference.runCount_unlisted += clearCount;
-            totalStatReference.runCount_unlisted += clearCount;
+            todayStat.runCount_unlisted += clearCount;
+            customConfig.totalStats.runCount_unlisted += clearCount;
         }
 
         this.saveConfig(customConfig);
@@ -365,7 +366,8 @@ module.exports = {
             totalClearTime = 0,
             soundDelay = parseInt(config.Config.Plugins[this.pluginName].soundDelay) ?? DEFAULT_DELAY,
             soundVolume = parseInt(config.Config.Plugins[this.pluginName].soundVolume) ?? 5,
-            todayStatReference = customConfig.weeklyStats[new Date().getDay()][dungeonId],
+            todayStat = customConfig.weeklyStats[new Date().getDay()],
+            todayStatReference = todayStat[dungeonId],
             totalStatReference = customConfig.totalStats[dungeonId];
 
         soundDelay = Math.max(0, Math.min(soundDelay, 60000));
@@ -388,9 +390,9 @@ module.exports = {
         setTimeout(() => {
             this.log(proxy, 'warning',
                 `${soundVolume ? `<audio class="asd" src="${path.join(__dirname, `/assets/sounds/f${soundVolume}.mp3`)}" autoplay></audio>` : ''}
-                Repeat Battle has been stopped.${clearCount ? `<br>Avg. Clear Time: ${this.formatTime(averageClearTime)} &nbsp; <b>Total time expended:</b> ${this.formatTime(totalClearTime)}` : ''}`,
+                Repeat Battle has been stopped.${clearCount ? `<br>Avg. Clear Time: ${this.formatTime(averageClearTime * 1000)} &nbsp; <b>Total time expended:</b> ${this.formatTime(totalClearTime * 1000)}` : ''}`,
                 `${soundVolume ? `<audio class="asd" src="${path.join(__dirname, `/assets/sounds/f${soundVolume}.mp3`)}" autoplay></audio>` : ''}
-                <b>전투 패배</b>로 <b>연속전투가 종료</b>되었습니다.${clearCount ? `\n<b>평균 클리어 타임:</b> ${this.formatTime(averageClearTime)} &nbsp; <b>총 소요시간:</b> ${this.formatTime(totalClearTime)}` : ''}`);
+                <b>전투 패배</b>로 <b>연속전투가 종료</b>되었습니다.${clearCount ? `\n<b>평균 클리어 타임:</b> ${this.formatTime(averageClearTime * 1000)} &nbsp; <b>총 소요시간:</b> ${this.formatTime(totalClearTime * 1000)}` : ''}`);
 
             notification.show();
             notification.on('click', () => {
@@ -406,8 +408,8 @@ module.exports = {
             totalStatReference.runCount += clearCount + 1;
             totalStatReference.failCount++;
         } else {
-            todayStatReference.runCount_unlisted += clearCount + 1;
-            totalStatReference.runCount_unlisted += clearCount + 1;
+            todayStat.runCount_unlisted += clearCount + 1;
+            customConfig.totalStats.runCount_unlisted += clearCount + 1;
         }
 
         this.saveConfig(customConfig);
@@ -565,7 +567,7 @@ module.exports = {
             if (res.status === 200)
                 res.text().then(version => {
                     const isLatest = version == 'latest';
-                    customConfig.checkedVersion = version;
+                    customConfig.checkedVersion = isLatest ? PLUGIN_VERSION : 'X.X.X';
 
                     if (!isLatest)
                         shell.openExternal('https://github.com/Jin-hjs/sw-repeat-battle-notifier/releases/latest');
@@ -574,6 +576,8 @@ module.exports = {
                         this.log(proxy, isLatest ? 'success' : 'warning',
                             `${isLatest ? `✔️ You are using the latest version.<br>${this.getReport()}` : `❌ You are not up to date with the latest plugin.<br>${this.getReport()}`}`,
                             `${isLatest ? `✔️ 최신 버전을 사용중입니다.<br>${this.getReport()}` : `❌ 구버전을 사용중입니다.<br>${this.getReport()}`}`);
+
+                    this.saveConfig(customConfig);
                 });
             else
                 if (config.Config.Plugins[this.pluginName].enabled)
